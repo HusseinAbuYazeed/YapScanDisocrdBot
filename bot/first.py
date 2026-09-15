@@ -32,11 +32,15 @@ async def analyze(interaction: discord.Interaction):
 
     channel = interaction.channel
 
+    messages = []
+
     async for message in channel.history(limit=100):
-        print(message.author, ":", message.content)
+        messages.append(message)
+
+    print(len(messages))
 
     await interaction.response.send_message(
         "I collected the messages!"
     )
-    
+
 bot.run(TOKEN)
