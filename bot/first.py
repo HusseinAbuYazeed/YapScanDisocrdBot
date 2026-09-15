@@ -16,7 +16,20 @@ bot = commands.Bot(command_prefix = "!", intents = intents)
 
 @bot.event
 async def on_ready():
-    print(f"Bot: {bot.user}")
-    print(f"Bot ID: {bot.user.id}")
+    print(f"{bot.user} is online")
+
+    await bot.tree.sync()
+
+    print("Slash commands synced!")
+
+
+@bot.tree.command(
+    name="analyze",
+    description="Analyze the chat"
+)
+async def analyze(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        "ready to analyze!"
+    )
 
 bot.run(TOKEN)
