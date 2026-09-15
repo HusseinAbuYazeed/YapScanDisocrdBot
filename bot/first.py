@@ -12,6 +12,7 @@ intents = discord.Intents.default()
 # to make the bot able to handle messages
 intents.message_content = True
 
+# make a bot object
 bot = commands.Bot(command_prefix = "!", intents = intents)
 
 @bot.event
@@ -28,8 +29,14 @@ async def on_ready():
     description="Analyze the chat"
 )
 async def analyze(interaction: discord.Interaction):
-    await interaction.response.send_message(
-        "ready to analyze!"
-    )
 
+    channel = interaction.channel
+
+    async for message in channel.history(limit=100):
+        print(message.author, ":", message.content)
+
+    await interaction.response.send_message(
+        "I collected the messages!"
+    )
+    
 bot.run(TOKEN)
