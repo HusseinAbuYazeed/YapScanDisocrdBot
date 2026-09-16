@@ -12,7 +12,16 @@ def create_bot():
     )
 
     @bot.event
-    async def on_ready():
-        print(f"{bot.user} is online")
+    async def setup_hook():
+        await bot.load_extension("bot.cogs.insights")
 
+    @bot.event
+    async def on_ready():
+        print(f"{bot.user} is online!")
+        try:
+            synced = await bot.tree.sync()
+            print(f"Synced {len(synced)} command(s)")
+        except Exception as e:
+            print(f"Sync failed: {e}")
+            
     return bot
