@@ -19,9 +19,11 @@ def create_bot():
     async def on_ready():
         print(f"{bot.user} is online!")
         try:
-            synced = await bot.tree.sync()
-            print(f"Synced {len(synced)} command(s)")
+            guild = discord.Object(id=1489873713691099177)
+            bot.tree.copy_global_to(guild=guild)
+            synced = await bot.tree.sync(guild=guild)
+            print(f"Synced {len(synced)} command(s) to guild")
         except Exception as e:
-            print(f"Sync failed: {e}")
-            
+            print(f"Sync failed: {e}")   
+
     return bot
