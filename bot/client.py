@@ -11,4 +11,8 @@ def create_bot():
         intents=intents
     )
 
+    @bot.event
+    async def on_ready():
+        print(f"{bot.user} is online")
+
     return bot
