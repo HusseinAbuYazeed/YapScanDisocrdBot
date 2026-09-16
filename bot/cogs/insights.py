@@ -192,7 +192,9 @@ class Insights(commands.Cog):
         chat_text = "\n".join(lines)
 
         prompt = (
-            "Summarize this Discord conversation in detail, in English. "
+            "Summarize this Discord conversation in detail. "
+            "Reply in the SAME language the conversation is written in "
+            "(if it's mostly Arabic or Egyptian Arabic, reply in Arabic; if English, reply in English). "
             "Break the summary into topics, formatted like this:\n"
             "Topic 1: (details about what was discussed)\n"
             "Topic 2: (details about what was discussed)\n"
