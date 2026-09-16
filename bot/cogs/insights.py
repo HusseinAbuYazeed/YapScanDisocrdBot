@@ -72,22 +72,22 @@ STOPWORDS = {
     "مفيش حاجه", "مافيش حاجة", "مافيش حاجه", "مفيش مشكلة", "حصل خير",
 
     # Common short interjections & laughter variants
-    "هههه", "ههه", "هه", "ههههه", "هههههه", "خخخ", "ههخخ", "واو"
+    "هههه", "ههه", "هه", "ههههه", "هههههه", "خخخ", "ههخخ", "واو",
 
-    # أفعال وكان وأخواتها (اللي ظهرت عندك في الصورة)
+    # Verbs of "kaan" and its sisters
     "كان", "كانت", "كنت", "يكون", "تكون", "يكونوا", "نكون", "كنتم", "كنا",
     "بقى", "بقت", "بقيت", "بقينا", "بقوا", "يبدأ", "بدأ", "بدأت",
-    
-    # أدوات شرط وربط شائعة
+
+    # Common conditional/connector particles
     "لو", "لولا", "انما", "أنما", "إنما", "عشان كده", "عشان كدا", "علشان كده",
     "عشان كده", "بسبب", "عن طريق", "من خلال", "من ناحية", "من جهة",
-    
-    # أفعال عامية وشائعة بتعدي في الـ Top words
+
+    # Common colloquial verbs that show up in top words
     "روحت", "راح", "راحت", "راحوا", "جيت", "جه", "جت", "جوا", "عملت",
     "عمل", "عملت", "عملوا", "بيعمل", "بتعمل", "بيعملوا", "خدت", "خد", "خدوا",
     "جبت", "جاب", "جابت", "جابوا", "قلت", "قال", "قالت", "قالوا",
-    
-    # قسم وخبريات ومصطلحات كلام
+
+    # Oaths and religious expressions
     "والله", "واللهِ", "ربنا", "يا رب", "يارب", "ماشاء الله", "ماشاءالله",
     "إن شاء الله", "ان شاء الله", "الحمد لله", "الحمدلله", "لا حول ولا قوة إلا بالله"
 }
@@ -165,8 +165,56 @@ class Insights(commands.Cog):
     @app_commands.command(name="asktest", description="Test AI connection")
     async def asktest(self, interaction: discord.Interaction):
         await interaction.response.defer()
-        reply = await ask_ai("قول مرحبا بجملة واحدة قصيرة")
+        reply = await ask_ai("Say hello in one short sentence")
         await interaction.followup.send(reply)
-        
+
+    @app_commands.command(name="summarize", description="Summarize the last N messages in this channel")
+    @app_commands.checks.cooldown(1, 3600)  # once per hour, per user
+    async def summarize(self, interaction: discord.Interaction, amount: int = 2000):
+        await interaction.response.defer()
+
+        if amount < 10:
+            amount = 10
+        if amount > 3000:
+            amount = 3000
+
+        messages = [msg async for msg in interaction.channel.history(limit=amount)]
+        messages.reverse()
+
+        lines = []
+        for msg in messages:
+            if msg.author.bot:
+                continue
+            if not msg.content:
+                continue
+            lines.append(f"{msg.author.display_name}: {msg.content}")
+
+        chat_text = "\n".join(lines)
+
+        prompt = (
+            "Summarize this Discord conversation in detail, in English. "
+            "Break the summary into topics, formatted like this:\n"
+            "Topic 1: (details about what was discussed)\n"
+            "Topic 2: (details about what was discussed)\n"
+            "Continue for every topic discussed, without merging or shortening topics together.\n\n"
+            f"Conversation:\n{chat_text}"
+        )
+
+        summary = await ask_ai(prompt)
+
+        if len(summary) > 1900:
+            summary = summary[:1900] + "..."
+
+        await interaction.followup.send(f"📋 Summary of the last {len(messages)} messages:\n\n{summary}")
+
+    @summarize.error
+    async def summarize_error(self, interaction: discord.Interaction, error):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message(
+                f"Slow down — you can use this command again in {error.retry_after:.0f} seconds",
+                ephemeral=True
+            )
+
+
 async def setup(bot: commands.Bot):
     await bot.add_cog(Insights(bot))

@@ -26,4 +26,6 @@ def create_bot():
         except Exception as e:
             print(f"Sync failed: {e}")   
 
+    
+
     return bot
