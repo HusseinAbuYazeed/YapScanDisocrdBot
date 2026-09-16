@@ -3,6 +3,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 from collections import Counter
+from bot.services.ai_service import ask_ai
 
 STOPWORDS = {
     # English
@@ -140,6 +141,32 @@ class Insights(commands.Cog):
         title = f"Top words for {member.display_name}" if member else "Top words in this channel"
         await interaction.followup.send(f"{title}:\n{result}")
 
+    @app_commands.command(name="topemojis", description="Show most used emojis (whole channel or a specific member)")
+    async def topemojis(self, interaction: discord.Interaction, member: discord.Member = None):
+        await interaction.response.defer()
+        messages = [msg async for msg in interaction.channel.history(limit=1000)]
 
+        all_emojis = []
+        for msg in messages:
+            if msg.author.bot:
+                continue
+            if member is not None and msg.author.id != member.id:
+                continue
+            found = EMOJI_PATTERN.findall(msg.content)
+            all_emojis.extend(found)
+
+        emoji_counts = Counter(all_emojis)
+        top_5 = emoji_counts.most_common(5)
+
+        result = "\n".join(f"{emoji}: {count}" for emoji, count in top_5)
+        title = f"Top emojis for {member.display_name}" if member else "Top emojis in this channel"
+        await interaction.followup.send(f"{title}:\n{result}")
+
+    @app_commands.command(name="asktest", description="Test AI connection")
+    async def asktest(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        reply = await ask_ai("قول مرحبا بجملة واحدة قصيرة")
+        await interaction.followup.send(reply)
+        
 async def setup(bot: commands.Bot):
     await bot.add_cog(Insights(bot))
