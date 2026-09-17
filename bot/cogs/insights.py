@@ -11,13 +11,13 @@ STOPWORDS = {
     "i", "you", "he", "she", "we", "they", "im", "u", "ur", "thx", "pls", "please", "bro", "dude", "lol", "ok", "okay", "yes", "no",
 
     # Arabic (formal & classical)
-    "و", "في", "من", "على", "عن", "إلى", "الى", "أن", "ان",
+    "و", "في", "من", "على", "عن", "إلى", "الى", "أن", "ان","الله",
     "هذا", "هذه", "ذلك", "التي", "الذي", "كل", "بعد", "قبل",
     "مع", "بين", "تحت", "فوق", "غير", "هو", "هي", "هما", "هن", "نحن",
     "أنت", "انت", "أنتم", "أنتم", "هؤلاء", "ذلك", "تلكم", "هكم",
     "الذين", "اللواتي", "اللاتي", "حين", "حيث", "إذا", "إذاً", "اذا",
-    "أيضاً", "ايضا", "أيضا", "بل", "لكن", "لكنه", "لكنها", "لذلك", "هكذا",
-    "نعم", "لا", "ما", "منذ", "حتى", "كي", "لكي", "فإن", "فان",
+    "أيضاً", "ايضا", "أيضا", "بل", "لكن", "لكنه", "لكنها", "لذلك", "هكذا","لسا","لما","بجد",
+    "نعم", "لا", "ما", "منذ", "حتى", "كي", "لكي", "فإن", "فان","ال","عامل","وانا",
     "ولو", "أو", "أم", "أين", "كيف", "متى", "لماذا", "كم",
     "بعض", "أغلب", "معظم", "سوف", "قد", "لقد", "بل", "إنما",
 
@@ -25,7 +25,7 @@ STOPWORDS = {
     "ده", "دي", "دة", "كده", "كدا", "انا", "انت", "انتي", "احنا",
     "هما", "دول", "بتاعي", "بتاعك", "بتاعه", "بتاعتي", "بتاعتك", "بتاعته",
     "بتاعتنا", "بتوع", "بتوعي", "عندي", "عندك", "عنده", "عندها", "عندنا",
-    "معايا", "معاك", "معاه", "معاها", "معانا", "جوه", "بره", "قدام", "ورا",
+    "معايا", "معاك", "معاه", "معاها", "معانا", "جوه", "بره", "قدام", "ورا","ولا", "ي", "فشخ",
 
     # Egyptian fillers, slang & common conversational words
     "مش", "بس", "يسطا", "ياسطا", "ايه", "يا", "او", "علي",
@@ -93,15 +93,19 @@ STOPWORDS = {
 }
 
 EMOJI_PATTERN = re.compile(
-    r"<a?:\w+:\d+>"      # custom server emoji: <:name:id> or <a:name:id>
-    r"|:\w+:"            # colon-style: :name:
+    r"<a?:\w+:\d+>"           # custom server emoji: <:name:id> or <a:name:id>
+    r"|:\w+:"                 # colon-style: :name:
     r"|["
-    r"\U0001F300-\U0001FAFF"
-    r"\U00002700-\U000027BF"
-    r"\U0001F1E0-\U0001F1FF"
-    r"]+"
+    r"\U0001F600-\U0001F64F"  # emoticons (faces)
+    r"\U0001F300-\U0001F5FF"  # symbols & pictographs
+    r"\U0001F680-\U0001F6FF"  # transport & map
+    r"\U0001F1E0-\U0001F1FF"  # flags
+    r"\U00002600-\U000026FF"  # misc symbols
+    r"\U00002700-\U000027BF"  # dingbats
+    r"\U0001F900-\U0001F9FF"  # supplemental symbols
+    r"\U0001FA70-\U0001FAFF"  # extended symbols
+    r"]"
 )
-
 
 class Insights(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -129,15 +133,24 @@ class Insights(commands.Cog):
                 continue
             if member is not None and msg.author.id != member.id:
                 continue
-            content = EMOJI_PATTERN.sub("", msg.content)
-            words = content.lower().split()
-            words = [w for w in words if w not in STOPWORDS]
+
+            content = re.sub(r"https?://\S+|www\.\S+", "", msg.content)
+            content = re.sub(r"<@!?\d+>|<#\d+>|<@&\d+>", "", content)  # mentions, channels, roles
+            content = EMOJI_PATTERN.sub("", content)
+
+            words = re.findall(r"[\w\u0600-\u06FF]+", content.lower())
+            words = [
+                w for w in words
+                if w not in STOPWORDS
+                and not w.isdigit()
+                and len(w) >= 2
+            ]
             all_words.extend(words)
 
         word_counts = Counter(all_words)
-        top_5 = word_counts.most_common(5)
+        top_10 = word_counts.most_common(10)
 
-        result = "\n".join(f"{word}: {count}" for word, count in top_5)
+        result = "\n".join(f"{word}: {count}" for word, count in top_10)
         title = f"Top words for {member.display_name}" if member else "Top words in this channel"
         await interaction.followup.send(f"{title}:\n{result}")
 
@@ -156,9 +169,9 @@ class Insights(commands.Cog):
             all_emojis.extend(found)
 
         emoji_counts = Counter(all_emojis)
-        top_5 = emoji_counts.most_common(5)
+        top_10 = emoji_counts.most_common(10)
 
-        result = "\n".join(f"{emoji}: {count}" for emoji, count in top_5)
+        result = "\n".join(f"{emoji}: {count}" for emoji, count in top_10)
         title = f"Top emojis for {member.display_name}" if member else "Top emojis in this channel"
         await interaction.followup.send(f"{title}:\n{result}")
 
@@ -192,15 +205,15 @@ class Insights(commands.Cog):
         chat_text = "\n".join(lines)
 
         prompt = (
-            "Summarize this Discord conversation in detail. "
-            "Reply in the SAME language the conversation is written in "
-            "(if it's mostly Arabic or Egyptian Arabic, reply in Arabic; if English, reply in English). "
-            "Break the summary into topics, formatted like this:\n"
-            "Topic 1: (details about what was discussed)\n"
-            "Topic 2: (details about what was discussed)\n"
-            "Continue for every topic discussed, without merging or shortening topics together.\n\n"
-            f"Conversation:\n{chat_text}"
-        )
+    "Summarize this Discord conversation topic by topic, in its original language "
+    "(Arabic/Egyptian Arabic or English).\n\n"
+    "For each topic, provide a brief summary focusing on the key points rather than full details.\n\n"
+    "Format:\n"
+    "Topic 1: (key points)\n"
+    "Topic 2: (key points)\n\n"
+    "Cover all topics individually without merging them together.\n\n"
+    f"Conversation:\n{chat_text}"
+)
 
         summary = await ask_ai(prompt)
 
