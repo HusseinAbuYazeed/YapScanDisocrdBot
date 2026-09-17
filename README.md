@@ -1,2 +1,2 @@
 # YapScanDisocrdBot
-A Discord bot that analyzes conversations and extracts useful (not useful) insights from chat history.
+A Discord bot built to learn discord.py
