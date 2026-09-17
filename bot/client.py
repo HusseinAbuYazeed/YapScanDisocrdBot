@@ -16,6 +16,11 @@ def create_bot():
         await bot.load_extension("bot.cogs.insights")
 
     @bot.event
+    async def setup_hook():
+        await bot.load_extension("bot.cogs.insights")
+        await bot.load_extension("bot.cogs.actions")
+
+    @bot.event
     async def on_ready():
         print(f"{bot.user} is online!")
         try:
