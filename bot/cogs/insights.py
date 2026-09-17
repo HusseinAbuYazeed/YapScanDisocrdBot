@@ -230,6 +230,50 @@ class Insights(commands.Cog):
                 ephemeral=True
             )
 
+    @app_commands.command(name="roast", description="Get a lighthearted roast/opinion on the last topic discussed")
+    @app_commands.checks.cooldown(1, 3600)  # once per hour, per user
+    async def roast(self, interaction: discord.Interaction, amount: int = 50):
+        await interaction.response.defer()
 
+        if amount < 5:
+            amount = 5
+        if amount > 300:
+            amount = 300
+
+        messages = [msg async for msg in interaction.channel.history(limit=amount)]
+        messages.reverse()
+
+        lines = []
+        for msg in messages:
+            if msg.author.bot:
+                continue
+            if not msg.content:
+                continue
+            lines.append(f"{msg.author.display_name}: {msg.content}")
+
+        chat_text = "\n".join(lines)
+
+        prompt = (
+    "You are that brutally sarcastic, zero-chill friend in the Discord group who roasts everyone without mercy, BUT WITHOUT using any bad words or profanity. "
+    "Read the last messages and drop a ruthless, witty comment. "
+    "Expose their bad logic, roast whoever said something dumb, and keep it painfully funny. "
+    "Keep it very short (2-3 lines max), pure chaotic energy, absolutely no formal summary or swear words. "
+    "Reply in the same language/dialect as the chat (mostly Egyptian Arabic Franco/slang).\n\n"
+    f"Conversation:\n{chat_text}"
+)
+        reply = await ask_ai(prompt)
+
+        if len(reply) > 1900:
+            reply = reply[:1900] + "..."
+
+        await interaction.followup.send(f"🔥 {reply}")
+
+    @roast.error
+    async def roast_error(self, interaction: discord.Interaction, error):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            await interaction.response.send_message(
+                f"Slow down — you can use this command again in {error.retry_after:.0f} seconds",
+                ephemeral=True
+            )
 async def setup(bot: commands.Bot):
     await bot.add_cog(Insights(bot))
